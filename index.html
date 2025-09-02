@@ -7,6 +7,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @media print {
+        /* Esconde todos os elementos do corpo da página */
+        body * {
+          visibility: hidden;
+        }
+
+        /* Torna visível apenas o contêiner da cartela de bingo */
+        .grid.grid-cols-5 {
+          visibility: visible;
+          position: absolute;
+          left: 0;
+          top: 0;
+        }
+
         @page {
           size: A4 portrait;
           margin: 1.5cm;
@@ -14,17 +27,6 @@
         body {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
-        }
-
-        /* Estas regras escondem a interface de configuração na impressão */
-        .seletor-da-interface-de-configuracao {
-          display: none;
-        }
-        .seletor-da-secao-de-itens-extras {
-            display: none;
-        }
-        .botoes-da-interface {
-            display: none;
         }
       }
     </style>
