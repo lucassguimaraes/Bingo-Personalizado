@@ -1,40 +1,29 @@
+
 import React, { useState, useCallback } from 'react';
-// FIX: Import BingoCardData and BingoSettings to use in props
-import type { GridSize, CellContent, BingoSettings, BingoCardData } from '../types';
 import { TrashIcon, UploadIcon, PlusIcon, StarIcon } from './Icons';
 import { useAppContext } from '../context/AppContext';
 
-interface BingoGridProps {
-  isEditable: boolean;
-  className?: string;
-  // FIX: Add optional content and settings props to allow displaying non-context grids (e.g., for printing)
-  content?: BingoCardData;
-  settings?: BingoSettings;
-}
-
-const lineThicknessClasses: { [key in BingoSettings['lineThickness']]: string } = {
+const lineThicknessClasses = {
   thin: 'border',
   medium: 'border-2',
   thick: 'border-4',
 };
 
-const gridLayoutClasses: { [key in GridSize]: string } = {
+const gridLayoutClasses = {
   3: 'grid-cols-3',
   4: 'grid-cols-4',
   5: 'grid-cols-5',
 };
 
-const BingoGrid: React.FC<BingoGridProps> = ({ isEditable, className = '', content: contentProp, settings: settingsProp }) => {
-  // FIX: Use props when provided, otherwise fall back to context values
+const BingoGrid = ({ isEditable, className = '', content: contentProp = null, settings: settingsProp = null }) => {
   const { settings: contextSettings, mainGridContent: contextGridContent, setMainGridContent } = useAppContext();
   const settings = settingsProp || contextSettings;
   const mainGridContent = contentProp || contextGridContent;
   
-  const [draggedOverIndex, setDraggedOverIndex] = useState<number | null>(null);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [draggedOverIndex, setDraggedOverIndex] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
 
-  const handleContentChange = (index: number, newContent: CellContent | null) => {
-    // FIX: Prevent content changes if the grid content is passed via props (i.e., it's a print view)
+  const handleContentChange = (index, newContent) => {
     if (contentProp) {
       return;
     }
@@ -43,7 +32,7 @@ const BingoGrid: React.FC<BingoGridProps> = ({ isEditable, className = '', conte
     setMainGridContent(newGridContent);
   };
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
+  const handleDrop = useCallback((e, index) => {
     e.preventDefault();
     e.stopPropagation();
     setDraggedOverIndex(null);
@@ -54,7 +43,7 @@ const BingoGrid: React.FC<BingoGridProps> = ({ isEditable, className = '', conte
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = () => {
-          handleContentChange(index, { id: crypto.randomUUID(), type: 'image', content: reader.result as string });
+          handleContentChange(index, { id: crypto.randomUUID(), type: 'image', content: reader.result });
         };
         reader.readAsDataURL(file);
       }
@@ -62,7 +51,7 @@ const BingoGrid: React.FC<BingoGridProps> = ({ isEditable, className = '', conte
     }
   }, [isEditable, mainGridContent]);
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>, index: number) => {
+  const handleTextChange = (e, index) => {
     if (!isEditable) return;
     const newText = e.target.value;
     if (newText) {
@@ -72,7 +61,7 @@ const BingoGrid: React.FC<BingoGridProps> = ({ isEditable, className = '', conte
     }
   };
   
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           e.currentTarget.blur();

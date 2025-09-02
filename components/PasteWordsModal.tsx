@@ -1,13 +1,7 @@
 
 import React, { useState } from 'react';
 
-interface PasteWordsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (words: string[]) => void;
-}
-
-const PasteWordsModal: React.FC<PasteWordsModalProps> = ({ isOpen, onClose, onConfirm }) => {
+const PasteWordsModal = ({ isOpen, onClose, onConfirm }) => {
   const [text, setText] = useState('');
 
   if (!isOpen) return null;

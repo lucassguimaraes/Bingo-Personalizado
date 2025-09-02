@@ -1,24 +1,16 @@
+
 import React from 'react';
-import type { BingoSettings, GridSize } from '../types';
 import { useAppContext } from '../context/AppContext';
 import { SaveIcon, LoadIcon } from './Icons';
 
-interface ControlPanelProps {
-  onGenerate: () => void;
-  onClearBoard: () => void;
-  onSave: () => void;
-  onLoad: () => void;
-}
-
-// FIX: Removed `settings: _` and `setSettings: __` from props destructuring as they are not in ControlPanelProps and are unused.
-const ControlPanel: React.FC<ControlPanelProps> = ({ onGenerate, onClearBoard, onSave, onLoad }) => {
+const ControlPanel = ({ onGenerate, onClearBoard, onSave, onLoad }) => {
   const { settings, setSettings } = useAppContext();
   
-  const handleSettingChange = <K extends keyof BingoSettings>(key: K, value: BingoSettings[K]) => {
+  const handleSettingChange = (key, value) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  const InputField: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  const InputField = ({ label, children }) => (
     <div>
       <label className="block text-sm font-medium text-slate-600 mb-1">{label}</label>
       {children}
@@ -43,7 +35,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ onGenerate, onClearBoard, o
           <InputField label="Tamanho da Grade">
             <select
               value={settings.gridSize}
-              onChange={(e) => handleSettingChange('gridSize', parseInt(e.target.value) as GridSize)}
+              onChange={(e) => handleSettingChange('gridSize', parseInt(e.target.value))}
               className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
               <option value="3">3x3</option>
@@ -95,7 +87,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ onGenerate, onClearBoard, o
                  <InputField label="Espessura da Linha">
                     <select
                     value={settings.lineThickness}
-                    onChange={(e) => handleSettingChange('lineThickness', e.target.value as BingoSettings['lineThickness'])}
+                    onChange={(e) => handleSettingChange('lineThickness', e.target.value)}
                     className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     >
                     <option value="thin">Fina</option>

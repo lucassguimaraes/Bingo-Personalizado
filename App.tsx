@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import ControlPanel from './components/ControlPanel';
 import BingoGrid from './components/BingoGrid';
@@ -6,11 +7,10 @@ import PasteWordsModal from './components/PasteWordsModal';
 import PrintLayout from './components/PrintLayout';
 import ConfirmationModal from './components/ConfirmationModal';
 import { useAppContext } from './context/AppContext';
-import type { CellContent, BingoCardData } from './types';
 
 const SAVE_KEY = 'bingoGeneratorState';
 
-const App: React.FC = () => {
+const App = () => {
     const {
         settings,
         setSettings,
@@ -20,14 +20,20 @@ const App: React.FC = () => {
         setExtraItems,
     } = useAppContext();
 
-    const [generatedCards, setGeneratedCards] = useState<BingoCardData[]>([]);
+    const [generatedCards, setGeneratedCards] = useState([]);
     const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+    // FIX: Explicitly type the confirmation state to allow ReactNode in message. This resolves multiple type errors.
     const [confirmation, setConfirmation] = useState<{
         isOpen: boolean;
         title: string;
         message: React.ReactNode;
         onConfirm: () => void;
-    }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+    });
 
     const handleClearBoard = () => {
         setConfirmation({
@@ -54,8 +60,8 @@ const App: React.FC = () => {
         });
     };
 
-    const handlePasteWords = (words: string[]) => {
-        const newItems: CellContent[] = words.map(word => ({
+    const handlePasteWords = (words) => {
+        const newItems = words.map(word => ({
             id: crypto.randomUUID(),
             type: 'text',
             content: word
@@ -64,8 +70,8 @@ const App: React.FC = () => {
     };
 
     const handleGenerate = useCallback(() => {
-        const mainItems = mainGridContent.filter((item): item is CellContent => item !== null);
-        const extra = extraItems.filter((item): item is CellContent => item !== null);
+        const mainItems = mainGridContent.filter((item) => item !== null);
+        const extra = extraItems.filter((item) => item !== null);
 
         const allItems = [...mainItems, ...extra];
         const uniqueItems = Array.from(new Map(allItems.map(item => [item.content, item])).values());
@@ -89,9 +95,9 @@ const App: React.FC = () => {
             return;
         }
 
-        const cards: BingoCardData[] = [];
+        const cards = [];
         for (let i = 0; i < settings.numCards; i++) {
-            const cardData: BingoCardData = Array(gridSize * gridSize).fill(null);
+            const cardData = Array(gridSize * gridSize).fill(null);
             
             const shuffledPool = [...pool].sort(() => 0.5 - Math.random());
             const cardItems = shuffledPool.slice(0, requiredItems);

@@ -1,15 +1,8 @@
 
-
 import React from 'react';
-import type { BingoCardData, BingoSettings } from '../types';
 import BingoGrid from './BingoGrid';
 
-interface PrintLayoutProps {
-  cards: BingoCardData[];
-  settings: BingoSettings;
-}
-
-const PrintLayout: React.FC<PrintLayoutProps> = ({ cards, settings }) => {
+const PrintLayout = ({ cards, settings }) => {
   if (!cards || cards.length === 0) {
     return null;
   }
@@ -20,7 +13,6 @@ const PrintLayout: React.FC<PrintLayoutProps> = ({ cards, settings }) => {
         <div key={cardIndex} className="p-4 w-full h-screen flex flex-col items-center break-after-page" style={{ pageBreakAfter: 'always' }}>
             <div className="w-full max-w-2xl mx-auto">
                 <h1 className="text-3xl font-bold text-center mb-4" style={{color: settings.textColor}}>{settings.title}</h1>
-                {/* FIX: Pass the full settings object and card content to the refactored BingoGrid component */}
                 <BingoGrid
                     content={cardContent}
                     isEditable={false}

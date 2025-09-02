@@ -1,21 +1,12 @@
+
 import React, { useState } from 'react';
-import type { CellContent } from '../types';
 import { PlusIcon, TrashIcon, UploadIcon } from './Icons';
 import { useAppContext } from '../context/AppContext';
 
-interface ExtraItemsProps {
-  onPasteWords: () => void;
-  onClearAll: () => void;
-}
-
-const ExtraItemCell: React.FC<{
-    item: CellContent | null;
-    onChange: (newItem: CellContent | null) => void;
-    onRemove: () => void;
-}> = ({ item, onChange, onRemove }) => {
+const ExtraItemCell = ({ item, onChange, onRemove }) => {
     const [isDragging, setIsDragging] = useState(false);
 
-    const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleTextChange = (e) => {
         const newText = e.target.value;
         if (newText) {
             onChange({ id: item?.id || crypto.randomUUID(), type: 'text', content: newText });
@@ -24,14 +15,14 @@ const ExtraItemCell: React.FC<{
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const handleKeyDown = (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           e.currentTarget.blur();
       }
     };
 
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    const handleDrop = (e) => {
         e.preventDefault();
         setIsDragging(false);
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -39,7 +30,7 @@ const ExtraItemCell: React.FC<{
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = () => {
-                    onChange({ id: item?.id || crypto.randomUUID(), type: 'image', content: reader.result as string });
+                    onChange({ id: item?.id || crypto.randomUUID(), type: 'image', content: reader.result });
                 };
                 reader.readAsDataURL(file);
             }
@@ -85,10 +76,10 @@ const ExtraItemCell: React.FC<{
 };
 
 
-const ExtraItems: React.FC<ExtraItemsProps> = ({ onPasteWords, onClearAll }) => {
+const ExtraItems = ({ onPasteWords, onClearAll }) => {
     const { extraItems, setExtraItems } = useAppContext();
     
-    const handleItemChange = (index: number, newItem: CellContent | null) => {
+    const handleItemChange = (index, newItem) => {
         const newItems = [...extraItems];
         newItems[index] = newItem;
         setExtraItems(newItems.filter(item => item !== null)); // Clean up empty items
@@ -98,7 +89,7 @@ const ExtraItems: React.FC<ExtraItemsProps> = ({ onPasteWords, onClearAll }) => 
         setExtraItems([...extraItems, null]);
     };
     
-    const handleRemoveItem = (index: number) => {
+    const handleRemoveItem = (index) => {
         const newItems = extraItems.filter((_, i) => i !== index);
         setExtraItems(newItems);
     }

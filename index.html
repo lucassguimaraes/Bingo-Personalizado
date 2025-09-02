@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gerador de Bingo Personalizado</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Adicionado Babel para transpilação no navegador -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- O script do Babel Standalone foi removido -->
   <script type="importmap">
 {
   "imports": {
@@ -20,7 +19,7 @@
 </head>
   <body class="bg-slate-100">
     <div id="root"></div>
-    <!-- Alterado o tipo de script para text/babel para que o Babel o processe -->
-    <script type="text/babel" data-type="module" src="./index.tsx"></script>
+    <!-- Script alterado para carregar um módulo .jsx padrão, sem a necessidade do Babel no navegador -->
+    <script type="module" src="./index.jsx"></script>
   </body>
 </html>
