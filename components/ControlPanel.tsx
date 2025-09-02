@@ -3,7 +3,7 @@ import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { SaveIcon, LoadIcon } from './Icons';
 
-const ControlPanel = ({ onGenerate, onClearBoard, onSave, onLoad }) => {
+const ControlPanel = ({ onGenerate, onClearBoard, onSave, onLoad, isGenerating }) => {
   const { settings, setSettings } = useAppContext();
   
   const handleSettingChange = (key, value) => {
@@ -101,9 +101,10 @@ const ControlPanel = ({ onGenerate, onClearBoard, onSave, onLoad }) => {
         <div className="pt-6 border-t border-slate-200 space-y-3">
              <button
                 onClick={onGenerate}
-                className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-150"
+                disabled={isGenerating}
+                className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-150 disabled:bg-blue-400 disabled:cursor-not-allowed"
             >
-                Gerar e Imprimir
+                {isGenerating ? 'Gerando...' : 'Gerar Imagens das Cartelas'}
             </button>
              <div className="grid grid-cols-2 gap-3">
                 <button
