@@ -9,7 +9,7 @@ const PrintLayout = ({ cards, settings }) => {
   return (
     <div className="hidden print:block">
       {cards.map((cardContent, cardIndex) => (
-        <div key={cardIndex} className="w-full h-screen flex flex-col justify-center items-center p-6 break-after-page" style={{ pageBreakAfter: 'always' }}>
+        <div key={cardIndex} className="w-full py-8 break-after-page" style={{ pageBreakAfter: 'always' }}>
             <div className="w-full max-w-xl mx-auto flex flex-col items-center">
                 <h1 className="text-4xl font-bold text-center mb-8" style={{color: settings.textColor}}>{settings.title}</h1>
                 <BingoGrid
