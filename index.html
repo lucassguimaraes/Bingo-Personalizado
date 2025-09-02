@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
@@ -6,7 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gerador de Bingo Personalizado</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- O script do Babel Standalone foi removido -->
+    <style>
+      @media print {
+        @page {
+          size: A4;
+          margin: 1.5cm;
+        }
+        body {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+    </style>
   <script type="importmap">
 {
   "imports": {
@@ -20,6 +30,6 @@
   <body class="bg-slate-100">
     <div id="root"></div>
     <!-- Script alterado para carregar um módulo .jsx padrão, sem a necessidade do Babel no navegador -->
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="./index.jsx"></script>
   </body>
 </html>

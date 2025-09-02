@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import ControlPanel from './components/ControlPanel';
 import BingoGrid from './components/BingoGrid';
@@ -164,7 +163,7 @@ const App = () => {
 
     return (
         <>
-            <main className="p-4 lg:p-8">
+            <main className="p-4 lg:p-8 print:hidden">
                 <header className="text-center mb-8">
                     <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">{settings.title}</h1>
                     <p className="mt-2 text-lg text-slate-600">Crie suas próprias cartelas de bingo para qualquer ocasião!</p>
