@@ -1,15 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import ControlPanel from './components/ControlPanel';
 import BingoGrid from './components/BingoGrid';
 import ExtraItems from './components/ExtraItems';
 import PasteWordsModal from './components/PasteWordsModal';
 import ConfirmationModal from './components/ConfirmationModal';
-import CardRenderer from './components/CardRenderer';
-import GenerationProgressModal from './components/GenerationProgressModal';
+import PrintLayout from './components/PrintLayout';
 import { useAppContext } from './context/AppContext';
-
-declare const htmlToImage: any;
-declare const JSZip: any;
 
 const SAVE_KEY = 'bingoGeneratorState';
 
@@ -24,9 +20,7 @@ const App = () => {
     } = useAppContext();
 
     const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0 });
-    const [cardToRender, setCardToRender] = useState(null);
+    const [cardsToPrint, setCardsToPrint] = useState(null);
     const [confirmation, setConfirmation] = useState<{
         isOpen: boolean;
         title: string;
@@ -99,7 +93,6 @@ const App = () => {
             return;
         }
 
-        setIsGenerating(true);
         const cards = [];
         for (let i = 0; i < settings.numCards; i++) {
             const cardData = Array(gridSize * gridSize).fill(null);
@@ -117,48 +110,30 @@ const App = () => {
             }
             cards.push(cardData);
         }
-
-        const zip = new JSZip();
-        const renderContainer = document.getElementById('card-renderer-container');
-        if (!renderContainer) {
-            setIsGenerating(false);
-            return;
-        }
-
-        for (let i = 0; i < cards.length; i++) {
-            setGenerationProgress({ current: i + 1, total: cards.length });
-            await new Promise(resolve => {
-                setCardToRender({ content: cards[i], settings });
-                setTimeout(resolve, 50);
-            });
-            
-            const node = renderContainer.firstChild;
-            if (node) {
-                try {
-                    const dataUrl = await htmlToImage.toPng(node, { pixelRatio: 2 });
-                    const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
-                    zip.file(`cartela_${i + 1}.png`, base64Data, { base64: true });
-                } catch (error) {
-                    console.error('Erro ao gerar imagem da cartela:', error);
-                }
-            }
-        }
         
-        const zipBlob = await zip.generateAsync({ type: 'blob' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(zipBlob);
-        const safeTitle = settings.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        link.download = `bingo_${safeTitle || 'personalizado'}.zip`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-
-        setIsGenerating(false);
-        setCardToRender(null);
-        setGenerationProgress({ current: 0, total: 0 });
+        setCardsToPrint(cards);
 
     }, [mainGridContent, extraItems, settings]);
+
+     useEffect(() => {
+        if (cardsToPrint && cardsToPrint.length > 0) {
+            const handleAfterPrint = () => {
+                setCardsToPrint(null);
+                window.removeEventListener('afterprint', handleAfterPrint);
+            };
+
+            window.addEventListener('afterprint', handleAfterPrint);
+            
+            const printTimeout = setTimeout(() => {
+                window.print();
+            }, 100);
+
+            return () => {
+                clearTimeout(printTimeout);
+                window.removeEventListener('afterprint', handleAfterPrint);
+            };
+        }
+    }, [cardsToPrint]);
     
     const handleSave = () => {
         try {
@@ -201,6 +176,10 @@ const App = () => {
         }
     };
 
+    if (cardsToPrint) {
+        return <PrintLayout cards={cardsToPrint} settings={settings} onBack={() => setCardsToPrint(null)} />;
+    }
+
     return (
         <>
             <main className="p-4 lg:p-8 print:hidden">
@@ -215,7 +194,6 @@ const App = () => {
                         onClearBoard={handleClearBoard}
                         onSave={handleSave}
                         onLoad={handleLoad}
-                        isGenerating={isGenerating}
                     />
 
                     <div className="flex-grow">
@@ -249,16 +227,6 @@ const App = () => {
                 onClose={() => setIsPasteModalOpen(false)}
                 onConfirm={handlePasteWords}
             />
-
-            <GenerationProgressModal
-                isOpen={isGenerating}
-                current={generationProgress.current}
-                total={generationProgress.total}
-            />
-            
-            <div id="card-renderer-container" style={{ position: 'fixed', top: -9999, left: -9999, zIndex: -1 }}>
-                {cardToRender && <CardRenderer content={cardToRender.content} settings={cardToRender.settings} />}
-            </div>
         </>
     );
 };
