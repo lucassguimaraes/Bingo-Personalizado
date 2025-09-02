@@ -1,16 +1,15 @@
-
 import React, { useState, useCallback } from 'react';
-import type { GridSize, CellContent, BingoSettings } from '../types';
-import { TrashIcon, UploadIcon, PlusIcon } from './Icons';
+// FIX: Import BingoCardData and BingoSettings to use in props
+import type { GridSize, CellContent, BingoSettings, BingoCardData } from '../types';
+import { TrashIcon, UploadIcon, PlusIcon, StarIcon } from './Icons';
+import { useAppContext } from '../context/AppContext';
 
 interface BingoGridProps {
-  gridSize: GridSize;
-  content: Array<CellContent | null>;
-  onContentChange?: (index: number, newContent: CellContent | null) => void;
   isEditable: boolean;
-  settings: Pick<BingoSettings, 'bgColor' | 'textColor' | 'lineColor' | 'lineThickness'>;
-  isFreeSpaceCenter?: boolean;
   className?: string;
+  // FIX: Add optional content and settings props to allow displaying non-context grids (e.g., for printing)
+  content?: BingoCardData;
+  settings?: BingoSettings;
 }
 
 const lineThicknessClasses: { [key in BingoSettings['lineThickness']]: string } = {
@@ -25,36 +24,51 @@ const gridLayoutClasses: { [key in GridSize]: string } = {
   5: 'grid-cols-5',
 };
 
-const BingoGrid: React.FC<BingoGridProps> = ({ gridSize, content, onContentChange, isEditable, settings, isFreeSpaceCenter = false, className = '' }) => {
+const BingoGrid: React.FC<BingoGridProps> = ({ isEditable, className = '', content: contentProp, settings: settingsProp }) => {
+  // FIX: Use props when provided, otherwise fall back to context values
+  const { settings: contextSettings, mainGridContent: contextGridContent, setMainGridContent } = useAppContext();
+  const settings = settingsProp || contextSettings;
+  const mainGridContent = contentProp || contextGridContent;
+  
   const [draggedOverIndex, setDraggedOverIndex] = useState<number | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  const handleContentChange = (index: number, newContent: CellContent | null) => {
+    // FIX: Prevent content changes if the grid content is passed via props (i.e., it's a print view)
+    if (contentProp) {
+      return;
+    }
+    const newGridContent = [...mainGridContent];
+    newGridContent[index] = newContent;
+    setMainGridContent(newGridContent);
+  };
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
     e.preventDefault();
     e.stopPropagation();
     setDraggedOverIndex(null);
-    if (!isEditable || !onContentChange) return;
+    if (!isEditable) return;
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = () => {
-          onContentChange(index, { id: crypto.randomUUID(), type: 'image', content: reader.result as string });
+          handleContentChange(index, { id: crypto.randomUUID(), type: 'image', content: reader.result as string });
         };
         reader.readAsDataURL(file);
       }
       e.dataTransfer.clearData();
     }
-  }, [isEditable, onContentChange]);
+  }, [isEditable, mainGridContent]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>, index: number) => {
-    if (!isEditable || !onContentChange) return;
+    if (!isEditable) return;
     const newText = e.target.value;
     if (newText) {
-        onContentChange(index, { id: crypto.randomUUID(), type: 'text', content: newText });
+        handleContentChange(index, { id: crypto.randomUUID(), type: 'text', content: newText });
     } else {
-        onContentChange(index, null);
+        handleContentChange(index, null);
     }
   };
   
@@ -65,12 +79,13 @@ const BingoGrid: React.FC<BingoGridProps> = ({ gridSize, content, onContentChang
       }
   };
 
-  const centerIndex = isFreeSpaceCenter && gridSize % 2 !== 0 ? Math.floor((gridSize * gridSize) / 2) : -1;
+  const isFreeSpaceCenter = settings.isCenterCellFree;
+  const centerIndex = isFreeSpaceCenter && settings.gridSize % 2 !== 0 ? Math.floor((settings.gridSize * settings.gridSize) / 2) : -1;
   const lineClass = lineThicknessClasses[settings.lineThickness];
 
   return (
-    <div className={`grid ${gridLayoutClasses[gridSize]} w-full aspect-square ${className}`}>
-      {content.map((cell, index) => {
+    <div className={`grid ${gridLayoutClasses[settings.gridSize]} w-full aspect-square ${className}`}>
+      {mainGridContent.map((cell, index) => {
         const isCenter = index === centerIndex;
         const cellStyle = {
           backgroundColor: settings.bgColor,
@@ -87,6 +102,11 @@ const BingoGrid: React.FC<BingoGridProps> = ({ gridSize, content, onContentChang
             onDragLeave={() => isEditable && setDraggedOverIndex(null)}
             onDrop={(e) => handleDrop(e, index)}
           >
+            {isCenter && isEditable && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
+                  <StarIcon className="w-1/3 h-1/3 text-yellow-400 opacity-20" />
+              </div>
+            )}
             {draggedOverIndex === index && (
               <div className="absolute inset-0 bg-blue-500 bg-opacity-30 border-2 border-dashed border-blue-700 flex flex-col items-center justify-center pointer-events-none">
                   <UploadIcon className="w-8 h-8 text-blue-700" />
@@ -96,8 +116,8 @@ const BingoGrid: React.FC<BingoGridProps> = ({ gridSize, content, onContentChang
             {cell?.type === 'image' ? (
               <>
                 <img src={cell.content} alt={`Conteúdo do bingo ${index + 1}`} className="object-contain w-full h-full" />
-                {isEditable && onContentChange && (
-                  <button onClick={() => onContentChange(index, null)} className="absolute top-1 right-1 p-0.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                {isEditable && (
+                  <button onClick={() => handleContentChange(index, null)} className="absolute top-1 right-1 p-0.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                     <TrashIcon className="w-4 h-4" />
                   </button>
                 )}
@@ -111,7 +131,7 @@ const BingoGrid: React.FC<BingoGridProps> = ({ gridSize, content, onContentChang
                     onFocus={() => setEditingIndex(index)}
                     onBlur={() => setEditingIndex(null)}
                     onKeyDown={handleKeyDown}
-                    className="w-full h-full bg-transparent text-center resize-none p-1 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md"
+                    className="w-full h-full bg-transparent text-center resize-none p-1 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md"
                     style={{ color: settings.textColor }}
                   />
                   {(!cell?.content && editingIndex !== index) && (

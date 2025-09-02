@@ -1,57 +1,66 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import ControlPanel from './components/ControlPanel';
 import BingoGrid from './components/BingoGrid';
 import ExtraItems from './components/ExtraItems';
 import PasteWordsModal from './components/PasteWordsModal';
 import PrintLayout from './components/PrintLayout';
-import type { BingoSettings, CellContent, BingoCardData, GridSize } from './types';
+import ConfirmationModal from './components/ConfirmationModal';
+import { useAppContext } from './context/AppContext';
+import type { CellContent, BingoCardData } from './types';
+
+const SAVE_KEY = 'bingoGeneratorState';
 
 const App: React.FC = () => {
-    const [settings, setSettings] = useState<BingoSettings>({
-        title: 'Bingo Personalizado',
-        gridSize: 5,
-        numCards: 1,
-        bgColor: '#FFFFFF',
-        textColor: '#000000',
-        lineColor: '#000000',
-        lineThickness: 'medium',
-        isCenterCellFree: true,
-    });
+    const {
+        settings,
+        setSettings,
+        mainGridContent,
+        setMainGridContent,
+        extraItems,
+        setExtraItems,
+    } = useAppContext();
 
-    const [mainGridContent, setMainGridContent] = useState<Array<CellContent | null>>([]);
-    const [extraItems, setExtraItems] = useState<Array<CellContent | null>>([]);
     const [generatedCards, setGeneratedCards] = useState<BingoCardData[]>([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
-    useEffect(() => {
-        const newSize = settings.gridSize * settings.gridSize;
-        setMainGridContent(Array(newSize).fill(null));
-         // Automatically disable fixed center cell for even-sized grids
-        if (settings.gridSize % 2 === 0 && settings.isCenterCellFree) {
-            setSettings(s => ({...s, isCenterCellFree: false}));
-        }
-    }, [settings.gridSize]);
-
-    const handleMainGridContentChange = (index: number, newContent: CellContent | null) => {
-        const newGridContent = [...mainGridContent];
-        newGridContent[index] = newContent;
-        setMainGridContent(newGridContent);
-    };
+    const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+    const [confirmation, setConfirmation] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: React.ReactNode;
+        onConfirm: () => void;
+    }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
 
     const handleClearBoard = () => {
-        if (window.confirm('Você tem certeza de que deseja limpar toda a grade principal?')) {
-            const newSize = settings.gridSize * settings.gridSize;
-            setMainGridContent(Array(newSize).fill(null));
-        }
+        setConfirmation({
+            isOpen: true,
+            title: 'Limpar Grade Principal?',
+            message: <p>Você tem certeza de que deseja remover todo o conteúdo da grade principal?</p>,
+            onConfirm: () => {
+                const newSize = settings.gridSize * settings.gridSize;
+                setMainGridContent(Array(newSize).fill(null));
+                setConfirmation(prev => ({ ...prev, isOpen: false }));
+            }
+        });
     };
     
+    const handleClearExtraItems = () => {
+        setConfirmation({
+            isOpen: true,
+            title: 'Limpar Itens Extras?',
+            message: <p>Você tem certeza de que deseja remover todos os itens extras?</p>,
+            onConfirm: () => {
+                setExtraItems([]);
+                setConfirmation(prev => ({ ...prev, isOpen: false }));
+            }
+        });
+    };
+
     const handlePasteWords = (words: string[]) => {
         const newItems: CellContent[] = words.map(word => ({
             id: crypto.randomUUID(),
             type: 'text',
             content: word
         }));
-        setExtraItems(prev => [...prev, ...newItems]);
+        setExtraItems(prev => [...prev.filter(item => item !== null), ...newItems]);
     };
 
     const handleGenerate = useCallback(() => {
@@ -84,7 +93,6 @@ const App: React.FC = () => {
         for (let i = 0; i < settings.numCards; i++) {
             const cardData: BingoCardData = Array(gridSize * gridSize).fill(null);
             
-            // Shuffle pool for each card
             const shuffledPool = [...pool].sort(() => 0.5 - Math.random());
             const cardItems = shuffledPool.slice(0, requiredItems);
             
@@ -101,18 +109,51 @@ const App: React.FC = () => {
 
         setGeneratedCards(cards);
 
-        // Allow state to update before printing
         setTimeout(() => {
             window.print();
         }, 100);
 
     }, [mainGridContent, extraItems, settings]);
+    
+    const handleSave = () => {
+        try {
+            const stateToSave = {
+                settings,
+                mainGridContent,
+                extraItems,
+            };
+            localStorage.setItem(SAVE_KEY, JSON.stringify(stateToSave));
+            alert('Sua sessão foi salva!');
+        } catch (error) {
+            console.error("Failed to save state:", error);
+            alert('Ocorreu um erro ao salvar a sessão.');
+        }
+    };
 
-    const gridSettings = {
-        bgColor: settings.bgColor,
-        textColor: settings.textColor,
-        lineColor: settings.lineColor,
-        lineThickness: settings.lineThickness,
+    const handleLoad = () => {
+        const savedState = localStorage.getItem(SAVE_KEY);
+        if (savedState) {
+            setConfirmation({
+                isOpen: true,
+                title: 'Carregar Sessão Salva?',
+                message: <p>Isso substituirá sua configuração atual. Deseja continuar?</p>,
+                onConfirm: () => {
+                     try {
+                        const loadedState = JSON.parse(savedState);
+                        setSettings(loadedState.settings);
+                        setMainGridContent(loadedState.mainGridContent);
+                        setExtraItems(loadedState.extraItems);
+                    } catch (error) {
+                        console.error("Failed to load state:", error);
+                        alert('Ocorreu um erro ao carregar a sessão. Os dados podem estar corrompidos.');
+                    } finally {
+                        setConfirmation(prev => ({ ...prev, isOpen: false }));
+                    }
+                }
+            });
+        } else {
+            alert('Nenhuma sessão salva foi encontrada.');
+        }
     };
 
     return (
@@ -125,10 +166,10 @@ const App: React.FC = () => {
 
                 <div className="flex flex-col lg:flex-row gap-8">
                     <ControlPanel 
-                        settings={settings} 
-                        setSettings={setSettings} 
                         onGenerate={handleGenerate}
                         onClearBoard={handleClearBoard}
+                        onSave={handleSave}
+                        onLoad={handleLoad}
                     />
 
                     <div className="flex-grow">
@@ -136,23 +177,30 @@ const App: React.FC = () => {
                              <h3 className="text-lg font-semibold text-slate-700 mb-2">Modelo da Grade de Bingo</h3>
                              <p className="text-sm text-slate-500 mb-4">Clique para editar o texto ou arraste e solte uma imagem. Para grades 3x3 e 5x5, você pode fixar o conteúdo da célula central nas configurações.</p>
                             <BingoGrid
-                                gridSize={settings.gridSize}
-                                content={mainGridContent}
-                                onContentChange={handleMainGridContentChange}
                                 isEditable={true}
-                                settings={gridSettings}
-                                isFreeSpaceCenter={settings.isCenterCellFree}
                                 className="max-w-xl mx-auto"
                             />
                         </div>
-                        <ExtraItems items={extraItems} setItems={setExtraItems} onPasteWords={() => setIsModalOpen(true)}/>
+                        <ExtraItems 
+                            onPasteWords={() => setIsPasteModalOpen(true)}
+                            onClearAll={handleClearExtraItems}
+                        />
                     </div>
                 </div>
             </main>
             
+            <ConfirmationModal
+                isOpen={confirmation.isOpen}
+                onClose={() => setConfirmation(prev => ({...prev, isOpen: false}))}
+                onConfirm={confirmation.onConfirm}
+                title={confirmation.title}
+            >
+                {confirmation.message}
+            </ConfirmationModal>
+
             <PasteWordsModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                isOpen={isPasteModalOpen}
+                onClose={() => setIsPasteModalOpen(false)}
                 onConfirm={handlePasteWords}
             />
 

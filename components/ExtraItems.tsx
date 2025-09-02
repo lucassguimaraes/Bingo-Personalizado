@@ -1,12 +1,11 @@
-
 import React, { useState } from 'react';
 import type { CellContent } from '../types';
 import { PlusIcon, TrashIcon, UploadIcon } from './Icons';
+import { useAppContext } from '../context/AppContext';
 
 interface ExtraItemsProps {
-  items: Array<CellContent | null>;
-  setItems: React.Dispatch<React.SetStateAction<Array<CellContent | null>>>;
   onPasteWords: () => void;
+  onClearAll: () => void;
 }
 
 const ExtraItemCell: React.FC<{
@@ -65,7 +64,7 @@ const ExtraItemCell: React.FC<{
                             value={item.content}
                             onChange={handleTextChange}
                             onKeyDown={handleKeyDown}
-                            className="w-full h-full bg-transparent text-center resize-none p-1 flex items-center justify-center focus:outline-none rounded-md text-slate-800"
+                            className="w-full h-full bg-transparent text-center resize-none p-1 focus:outline-none rounded-md text-slate-800"
                         />
                     )}
                      <button onClick={onRemove} className="absolute -top-2 -right-2 p-0.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
@@ -78,7 +77,7 @@ const ExtraItemCell: React.FC<{
                     onChange={handleTextChange}
                     onKeyDown={handleKeyDown}
                     placeholder="Digite ou solte a imagem"
-                    className="w-full h-full bg-transparent text-center text-xs resize-none p-1 flex items-center justify-center focus:outline-none rounded-md"
+                    className="w-full h-full bg-transparent text-center text-xs resize-none p-1 focus:outline-none rounded-md"
                 />
             )}
         </div>
@@ -86,27 +85,23 @@ const ExtraItemCell: React.FC<{
 };
 
 
-const ExtraItems: React.FC<ExtraItemsProps> = ({ items, setItems, onPasteWords }) => {
+const ExtraItems: React.FC<ExtraItemsProps> = ({ onPasteWords, onClearAll }) => {
+    const { extraItems, setExtraItems } = useAppContext();
+    
     const handleItemChange = (index: number, newItem: CellContent | null) => {
-        const newItems = [...items];
+        const newItems = [...extraItems];
         newItems[index] = newItem;
-        setItems(newItems.filter(item => item !== null)); // Clean up empty items
+        setExtraItems(newItems.filter(item => item !== null)); // Clean up empty items
     };
 
     const handleAddItem = () => {
-        setItems([...items, null]);
+        setExtraItems([...extraItems, null]);
     };
     
     const handleRemoveItem = (index: number) => {
-        const newItems = items.filter((_, i) => i !== index);
-        setItems(newItems);
+        const newItems = extraItems.filter((_, i) => i !== index);
+        setExtraItems(newItems);
     }
-
-    const handleClearAll = () => {
-        if(window.confirm("Você tem certeza de que deseja limpar todos os itens extras?")) {
-            setItems([]);
-        }
-    };
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md mt-4">
@@ -114,7 +109,7 @@ const ExtraItems: React.FC<ExtraItemsProps> = ({ items, setItems, onPasteWords }
       <p className="text-sm text-slate-500 mb-4">Adicione mais palavras ou imagens aqui. Estes serão usados aleatoriamente para preencher as cartelas de bingo geradas, garantindo que cada cartela seja única.</p>
       
       <div className="flex flex-wrap gap-4 mb-4">
-        {items.map((item, index) => (
+        {extraItems.map((item, index) => (
           <ExtraItemCell key={item?.id || index} item={item} onChange={(newItem) => handleItemChange(index, newItem)} onRemove={() => handleRemoveItem(index)} />
         ))}
         <button onClick={handleAddItem} className="w-28 h-28 border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center text-slate-500 hover:bg-slate-50 hover:border-slate-400 transition-colors">
@@ -125,7 +120,7 @@ const ExtraItems: React.FC<ExtraItemsProps> = ({ items, setItems, onPasteWords }
 
       <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-200">
         <button onClick={onPasteWords} className="px-4 py-2 text-sm bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors">Colar Lista de Palavras</button>
-        <button onClick={handleClearAll} className="px-4 py-2 text-sm bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors">Limpar Itens Extras</button>
+        <button onClick={onClearAll} className="px-4 py-2 text-sm bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors">Limpar Itens Extras</button>
       </div>
     </div>
   );

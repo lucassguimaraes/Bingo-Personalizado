@@ -1,19 +1,22 @@
 import React from 'react';
 import type { BingoSettings, GridSize } from '../types';
+import { useAppContext } from '../context/AppContext';
+import { SaveIcon, LoadIcon } from './Icons';
 
 interface ControlPanelProps {
-  settings: BingoSettings;
-  setSettings: React.Dispatch<React.SetStateAction<BingoSettings>>;
   onGenerate: () => void;
   onClearBoard: () => void;
+  onSave: () => void;
+  onLoad: () => void;
 }
 
-const ControlPanel: React.FC<ControlPanelProps> = ({ settings, setSettings, onGenerate, onClearBoard }) => {
+// FIX: Removed `settings: _` and `setSettings: __` from props destructuring as they are not in ControlPanelProps and are unused.
+const ControlPanel: React.FC<ControlPanelProps> = ({ onGenerate, onClearBoard, onSave, onLoad }) => {
+  const { settings, setSettings } = useAppContext();
+  
   const handleSettingChange = <K extends keyof BingoSettings>(key: K, value: BingoSettings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
-
-  const apectRatio = 1/1;
 
   const InputField: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
     <div>
@@ -110,6 +113,22 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ settings, setSettings, onGe
             >
                 Gerar e Imprimir
             </button>
+             <div className="grid grid-cols-2 gap-3">
+                <button
+                    onClick={onSave}
+                    className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-150"
+                >
+                    <SaveIcon className="w-5 h-5" />
+                    Salvar
+                </button>
+                <button
+                    onClick={onLoad}
+                    className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-150"
+                >
+                    <LoadIcon className="w-5 h-5" />
+                    Carregar
+                </button>
+            </div>
              <button
                 onClick={onClearBoard}
                 className="w-full py-2 px-4 bg-red-100 text-red-700 font-semibold rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-150"
